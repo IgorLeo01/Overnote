@@ -1,14 +1,25 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const session = await auth();
+
+    if (!session || !session.user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+    }
+
     const note = await prisma.note.findUnique({
       where: { id: params.id },
     });
 
-    if (!note || !note.isPublic) {
-      return NextResponse.json({ message: "Note not found or private" }, { status: 404 });
+    if (!note) {
+      return NextResponse.json({ message: "Note not found" }, { status: 404 });
+    }
+
+    if (note.isPublic === false && note.userId !== session.user.id) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
     }
 
     return NextResponse.json(note, { status: 200 });
@@ -29,8 +40,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const updatedNote = await prisma.note.update({
       where: { id: params.id },
       data: {
-        content,           
-        isPublic: privacy === "public", 
+        content,
+        isPublic: privacy === "public",
       },
     });
 
@@ -42,22 +53,23 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-    try {
-      const existingNote = await prisma.note.findUnique({
-        where: { id: params.id },
-      });
-  
-      if (!existingNote) {
-        return NextResponse.json({ message: "Note not found" }, { status: 404 });
-      }
-  
-      await prisma.note.delete({
-        where: { id: params.id },
-      });
-  
-      return NextResponse.json({ message: "Note deleted successfully" }, { status: 200 });
-    } catch (error) {
-      console.error("Error deleting note:", error);
-      return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  console.log("Deleting note with ID:", params.id);
+  try {
+    const existingNote = await prisma.note.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!existingNote) {
+      return NextResponse.json({ message: "Note not found" }, { status: 404 });
     }
+
+    await prisma.note.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ message: "Note deleted successfully" }, { status: 200 });
+  } catch (error) {
+    console.error("Error deleting note:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
+}

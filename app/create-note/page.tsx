@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import NoteEditor from '@/components/note-editor'
-import ToolBar from '@/components/toolbar'
-import Alert from '@/components/ui/alert' 
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
+import  ToolBar  from "@/components/toolbar"
+import  NoteEditor  from "@/components/note-editor"
+import  Alert  from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator";
 
 export default function CreateNotePage() {
   const router = useRouter();
@@ -32,7 +35,8 @@ export default function CreateNotePage() {
 
   const handleSave = async () => {
     if (!title || !editorContent) {
-      alert('Title and content are required');
+      setAlertMessage('Title and content are required');
+      setAlertType('error');
       return;
     }
 
@@ -62,33 +66,55 @@ export default function CreateNotePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-8 space-y-6">
-      {alertMessage && (
-        <Alert message={alertMessage} type={alertType!} onClose={handleAlertClose} />
-      )}
-      
-      <ToolBar 
-        onChangePrivacy={handlePrivacyChange} 
-        privacy={privacy} 
-        onSubmit={handleSave} 
-      />
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Enter title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full p-3 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+    <div className="flex">
+
+      <div className="max-w-4xl mx-auto mt-8 space-y-6 flex-1">
+        {alertMessage && (
+          <Alert message={alertMessage} type={alertType!} onClose={handleAlertClose} />
+        )}
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Create a New Note</CardTitle>
+          </CardHeader>
+
+          <Separator />
+
+          <CardContent>
+            <ToolBar 
+              onChangePrivacy={handlePrivacyChange} 
+              privacy={privacy} 
+              onSubmit={handleSave} 
+            />
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Enter title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full p-3 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <NoteEditor 
+              initialContent="" 
+              noteId="" 
+              privacy={privacy} 
+              onSave={(content) => setEditorContent(content)} 
+              autosave={false}  
+              placeholder="What's on your mind?"
+            />
+          </CardContent>
+
+          <CardFooter className="flex justify-end gap-4">
+            <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              Go Back
+            </Button>
+            <Button variant="default" onClick={handleSave}>
+              Save Note
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
-      <NoteEditor 
-        initialContent="" 
-        noteId="" 
-        privacy={privacy} 
-        onSave={(content) => setEditorContent(content)} 
-        autosave={false}  
-        placeholder="What's on your mind?"
-      />
     </div>
   );
 }

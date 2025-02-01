@@ -9,7 +9,6 @@ interface ToolBarProps {
 const ToolBar: React.FC<ToolBarProps> = ({ onSubmit, onChangePrivacy, privacy }) => {
   return (
     <div className="flex justify-between items-center mb-4">
-      {/* Indicativo de privacidade */}
       <div className="flex items-center space-x-4">
         <span className="font-semibold text-gray-700">
           {privacy === 'public' ? 'Public' : 'Private'} Note
@@ -36,12 +35,6 @@ const ToolBar: React.FC<ToolBarProps> = ({ onSubmit, onChangePrivacy, privacy })
 
      
       <div>
-        <button
-          onClick={onSubmit} 
-          className="px-4 py-2 bg-green-500 text-white rounded"
-        >
-          Save
-        </button>
       </div>
     </div>
   );
