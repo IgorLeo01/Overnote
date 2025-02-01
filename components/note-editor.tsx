@@ -1,44 +1,45 @@
+'use client'
+
 import { useEditor, EditorContent } from '@tiptap/react';
-import { tiptapExtensions } from '@/lib/tiptapExts'; 
+import { tiptapExtensions } from '@/lib/tiptapExts';
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface NoteEditorProps {
   initialContent: string;
   noteId: string;
+  privacy: string;
+  onSave: (content: string) => void;
+  autosave: boolean;
+  placeholder: string;
+
 }
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ initialContent, noteId }) => {
-  const [content, setContent] = useState(initialContent);
-  const [saving, setSaving] = useState(false);
+const NoteEditor: React.FC<NoteEditorProps> = ({ initialContent, noteId, privacy, onSave, autosave }) => {
+  const [content, setContent] = useState(initialContent || '');  
+
+  const { data: session, status } = useSession();
 
   const editor = useEditor({
-    extensions: tiptapExtensions, 
-    content: initialContent,
-    onUpdate: ({ editor }) => {
-      setContent(editor.getHTML());
+    extensions: tiptapExtensions,
+    content: initialContent || '', 
+    editorProps: {
+      attributes: {
+        class: 'prose max-w-none focus:outline-none min-h-96 border-2 border-gray-300 p-4', 
+      },
     },
+    onUpdate: ({ editor }) => {
+      const newContent = editor.getText(); 
+      if (newContent !== content) {
+        setContent(newContent); 
+        onSave(newContent);  
+      }
+    },
+    immediatelyRender: false,  
   });
 
-  useEffect(() => {
-    const autosaveInterval = setInterval(async () => {
-      if (saving) return;
-      setSaving(true);
-
-      await fetch(`/api/notes/${noteId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, privacy: 'public' }),
-      });
-
-      setSaving(false); 
-    }, 5000); 
-
-    return () => clearInterval(autosaveInterval);
-  }, [content, noteId, saving]);
-
   return (
-    <div>
-      {saving && <div className="text-blue-500">Saving...</div>} 
+    <div className="rounded-xl p-4 h-full w-full overflow-hidden">
       <EditorContent editor={editor} />
     </div>
   );
